@@ -36,6 +36,8 @@ class FirebaseState extends ChangeNotifier {
       idToken: googleAuth?.idToken,
     );
 
+    notifyListeners();
+
     _user = await FirebaseAuth.instance.signInWithCredential(credential);
     return checkNewUser();
   }
@@ -75,6 +77,7 @@ class FirebaseState extends ChangeNotifier {
   }
 
   void signOut() {
+    Navigator.pushNamed(context, '/login');
     FirebaseAuth.instance.signOut();
   }
 }

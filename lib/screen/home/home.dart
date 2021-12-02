@@ -9,7 +9,7 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Consumer<CarpoolState>(
-        builder: (context, carpoolState, _) => carpoolState.buildCarpoolListView(context)
+        builder: (context, carpoolState, _) => carpoolState.buildCarpoolListView(context, true)
       ),
     );
   }

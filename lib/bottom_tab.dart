@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_app_final_project/state/application_state.dart';
 import 'package:provider/provider.dart';
-import './screen/home/home.dart';
-import './screen/carpool/carpool_list.dart';
-import './screen/my_page/profile.dart';
 
 class BottomTab extends StatefulWidget {
   const BottomTab({Key? key,}) : super(key: key);
@@ -40,7 +37,7 @@ class _BottomTabState extends State<BottomTab> {
             ),
             IconButton(
               icon: const Icon(
-                Icons.email_outlined,
+                Icons.mail_outline,
                 semanticLabel: 'filter',
               ),
               onPressed: () => appState.changePageIndex(2),
@@ -55,9 +52,9 @@ class _BottomTabState extends State<BottomTab> {
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: _currentIndex,
           items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: 'Home'),
-            BottomNavigationBarItem(icon: Icon(Icons.directions_car_rounded), label: 'Carpool'),
-            BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+            BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: '카풀'),
+            BottomNavigationBarItem(icon: Icon(Icons.directions_car_rounded), label: '카풀 등록'),
+            BottomNavigationBarItem(icon: Icon(Icons.person), label: '프로필'),
           ],
           onTap: (index) => {
             _onTap(index, appState)

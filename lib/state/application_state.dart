@@ -26,16 +26,25 @@ class ApplicationState extends ChangeNotifier {
   ];
 
   final List<String> _title = [
-    'Home',
-    'Notification',
-    'Chat List',
-    'Chat Room',
-    'Carpool List',
-    'Carpool Apply',
-    'Carpool Detail',
-    'Profile',
-    'Car Add',
+    '내 카풀',
+    '알림',
+    '채팅 목록',
+    '채팅방',
+    '카풀 목록',
+    '카풀 등록',
+    '카풀 정보',
+    '프로필',
+    '차량 등록',
   ];
+
+  bool _editPage = false;
+  bool get editPage => _editPage;
+
+  int _editCarpoolIndex = 0;
+  int get editCarpoolIndex => _editCarpoolIndex;
+
+  int _editCarIndex = 0;
+  int get editCarIndex => _editCarIndex;
 
   ApplicationState();
 
@@ -47,15 +56,22 @@ class ApplicationState extends ChangeNotifier {
     return _title[_pageIndex];
   }
 
+  void setChatRoomTitle(String carpool) {
+    _title[3] = carpool;
+  }
+
   void onTapBottomNavigation(int index) {
     switch(index) {
       case 0:
-        changePageIndex(0);
-        break;
-      case 1:
+        resetEditInformation();
         changePageIndex(4);
         break;
+      case 1:
+        resetEditInformation();
+        changePageIndex(5);
+        break;
       case 2:
+        resetEditInformation();
         changePageIndex(7);
         break;
     }
@@ -64,5 +80,20 @@ class ApplicationState extends ChangeNotifier {
   void changePageIndex(int index) {
     _pageIndex = index;
     notifyListeners();
+  }
+
+  void resetEditInformation() {
+    _editPage = false;
+    _editCarpoolIndex = 0;
+    _editCarIndex = 0;
+  }
+
+  void setEditInformation(bool carpool, int index) {
+    if (carpool) {
+      _editCarpoolIndex = index;
+    } else {
+      _editCarIndex = index;
+    }
+    _editPage = true;
   }
 }

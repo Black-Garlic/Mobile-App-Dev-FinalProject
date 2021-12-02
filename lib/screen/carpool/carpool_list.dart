@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../state/carpool_state.dart';
 
 class CarpoolListPage extends StatelessWidget {
   const CarpoolListPage({Key? key}) : super(key: key);
@@ -7,13 +8,8 @@ class CarpoolListPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: const <Widget>[
-          Text(
-            'Carpool List',
-          )
-        ],
+      child: Consumer<CarpoolState>(
+          builder: (context, carpoolState, _) => carpoolState.buildCarpoolListView(context, false)
       ),
     );
   }

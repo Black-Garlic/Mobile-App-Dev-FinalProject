@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_app_final_project/state/application_state.dart';
+import 'package:mobile_app_final_project/state/carpool_state.dart';
 import 'package:provider/provider.dart';
 
 class CarAddPage extends StatelessWidget {
@@ -6,62 +8,73 @@ class CarAddPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          const Text(
-            'Car Add',
-          )
-        ],
-      ),
+    return const Center(
+      child: Form(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key? key, required this.title}) : super(key: key);
-
-  final String title;
+class Form extends StatefulWidget {
+  const Form({Key? key,}) : super(key: key);
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<Form> createState() => _FormState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
+class _FormState extends State<Form> {
+  final _carpoolCarNumController = TextEditingController();
+  final _carpoolCarDescController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-      ),
-      body: Center(
-        child: Column(
+    return Consumer<ApplicationState>(
+      builder: (context, appState, _) => Consumer<CarpoolState>(
+        builder: (context, carpoolState, _) => Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
+          children: appState.editPage ?
+          <Widget>[
+            TextField(
+              controller: _carpoolCarNumController..text = carpoolState.car[appState.editCarIndex].car,
+              decoration: const InputDecoration(
+                  labelText: "차량 번호"
+              ),
             ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headline4,
+            TextField(
+              controller: _carpoolCarDescController..text = carpoolState.car[appState.editCarIndex].desc,
+              decoration: const InputDecoration(
+                  labelText: "차량 설명"
+              ),
+            ),
+            TextButton(
+                onPressed: () async => {
+                  carpoolState.updateCar(_carpoolCarNumController.text, _carpoolCarDescController.text, appState.editCarIndex),
+                },
+                child: Text("수정")
+            ),
+          ]
+              :
+          <Widget>[
+            TextField(
+              controller: _carpoolCarNumController,
+              decoration: const InputDecoration(
+                  labelText: "차량 번호"
+              ),
+            ),
+            TextField(
+              controller: _carpoolCarDescController,
+              decoration: const InputDecoration(
+                  labelText: "차량 설명"
+              ),
+            ),
+            TextButton(
+                onPressed: () async => {
+                  carpoolState.addCar(_carpoolCarNumController.text, _carpoolCarDescController.text),
+                },
+                child: Text("등록")
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
