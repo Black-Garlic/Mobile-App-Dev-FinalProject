@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:mobile_app_final_project/model/carpool.dart';
+import 'package:intl/intl.dart';
 import 'package:mobile_app_final_project/state/application_state.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -9,7 +9,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../model/carpool.dart';
-import '../model/notification.dart';
+import '../model/location.dart';
 import '../model/chat.dart';
 import '../model/car.dart';
 import '../model/participate.dart';
@@ -24,10 +24,6 @@ class CarpoolState extends ChangeNotifier {
   List<Parcitipate> _myCarpool = [];
   List<Parcitipate> get myCarpool => _myCarpool;
 
-  StreamSubscription<QuerySnapshot>? _notificationSubscription;
-  List<Notifications> _notification = [];
-  List<Notifications> get notification => _notification;
-
   StreamSubscription<QuerySnapshot>? _chatSubscription;
   List<Chat> _chat = [];
   List<Chat> get chat => _chat;
@@ -36,8 +32,15 @@ class CarpoolState extends ChangeNotifier {
   List<Car> _car = [];
   List<Car> get car => _car;
 
+  StreamSubscription<QuerySnapshot>? _locationSubscription;
+  List<Location> _location = [];
+  List<Location> get location => _location;
+
   late Carpool _selectedCarpool;
   Carpool get selectedCarpool => _selectedCarpool;
+
+  late String _selectedChatRoom;
+  String get selectedChatRoom => _selectedChatRoom;
 
   CarpoolState() {
     init();
@@ -49,13 +52,15 @@ class CarpoolState extends ChangeNotifier {
     FirebaseAuth.instance.userChanges().listen((user) {
       print("change user");
       if (user != null) {
-        initStream();
+        initStream(user);
       }
       notifyListeners();
     });
   }
 
-  void initStream() {
+  void initStream(User user) {
+    print("this is uid");
+    print(user.uid);
     _carpoolSubscription = FirebaseFirestore.instance
         .collection('carpool')
         .orderBy('reg_date', descending: true)
@@ -67,12 +72,14 @@ class CarpoolState extends ChangeNotifier {
           Carpool(
             id: document.id,
             userUid: document.data()['user_uid'] as String,
+            nickname: document.data()['nickname'] as String,
             carUid: document.data()['car_uid'] as String,
+            carNum: document.data()['car_num'] as String,
+            carDesc: document.data()['car_desc'] as String,
             startLocation: document.data()['start_location'] as String,
             startLocationDetail: document.data()['start_location_detail'] as String,
             endLocation: document.data()['end_location'] as String,
             endLocationDetail: document.data()['end_location_detail'] as String,
-            downtown: document.data()['downtown'] as bool,
             maxNum: document.data()['max_num'] as int,
             currentNum: document.data()['current_num'] as int,
             fee: document.data()['fee'] as int,
@@ -83,51 +90,37 @@ class CarpoolState extends ChangeNotifier {
             modDate: document.data()['mod_date'].toDate() as DateTime,
           ),
         );
+        notifyListeners();
+        _selectedCarpool = _carpool[0];
       }
     });
     _myCarpoolSubscription = FirebaseFirestore.instance
         .collection('participate')
-        .where('user_uid', isEqualTo: FirebaseAuth.instance.currentUser!.uid)
-        .orderBy('reg_date')
+        .orderBy('reg_date', descending: true)
         .snapshots()
         .listen((snapshot) {
       _myCarpool = [];
       for (final document in snapshot.docs) {
-        print("MyCarpool");
-        _myCarpool.add(
-          Parcitipate(
-            id: document.id,
-            userUid: document.data()['user_uid'] as String,
-            carpoolUid: document.data()['car_uid'] as String,
-            send: document.data()['send'] as bool,
-            regDate: document.data()['reg_date'].toDate() as DateTime,
-            modDate: document.data()['mod_date'].toDate() as DateTime,
-          ),
-        );
-      }
-    });
-    _notificationSubscription = FirebaseFirestore.instance
-        .collection('notification')
-        .where('user_uid', isEqualTo: FirebaseAuth.instance.currentUser!.uid)
-        .orderBy('reg_date')
-        .snapshots()
-        .listen((snapshot) {
-      _notification = [];
-      for (final document in snapshot.docs) {
-        _notification.add(
-          Notifications(
-            id: document.id,
-            userUid: document.data()['user_uid'] as String,
-            message: document.data()['message'] as String,
-            regDate: document.data()['reg_date'].toDate() as DateTime,
-            modDate: document.data()['mod_date'].toDate() as DateTime,
-          ),
-        );
+        print("My carpool");
+        print(document.data()['user_uid']);
+        if (document.data()['user_uid'] == FirebaseAuth.instance.currentUser!.uid) {
+          _myCarpool.add(
+            Parcitipate(
+              id: document.id,
+              userUid: document.data()['user_uid'] as String,
+              nickname: document.data()['nickname'] as String,
+              carpoolUid: document.data()['carpool_uid'] as String,
+              send: document.data()['send'] as bool,
+              regDate: document.data()['reg_date'].toDate() as DateTime,
+              modDate: document.data()['mod_date'].toDate() as DateTime,
+            ),
+          );
+          notifyListeners();
+        }
       }
     });
     _chatSubscription = FirebaseFirestore.instance
         .collection('chat')
-        .where('user_uid', isEqualTo: FirebaseAuth.instance.currentUser!.uid)
         .orderBy('reg_date')
         .snapshots()
         .listen((snapshot) {
@@ -137,112 +130,65 @@ class CarpoolState extends ChangeNotifier {
           Chat(
             id: document.id,
             userUid: document.data()['user_uid'] as String,
+            nickname: document.data()['nickname'] as String,
             carpoolUid: document.data()['carpool_uid'] as String,
             message: document.data()['message'] as String,
             regDate: document.data()['reg_date'].toDate() as DateTime,
             modDate: document.data()['mod_date'].toDate() as DateTime,
           ),
         );
+        notifyListeners();
       }
     });
     _carSubscription = FirebaseFirestore.instance
         .collection('car')
-        .where('user_uid', isEqualTo: FirebaseAuth.instance.currentUser!.uid)
-        .orderBy('reg_date')
+        .orderBy('reg_date', descending: true)
         .snapshots()
         .listen((snapshot) {
       _car = [];
       for (final document in snapshot.docs) {
-        _car.add(
-          Car(
+        if (document.data()['user_uid'] == FirebaseAuth.instance.currentUser!.uid) {
+          _car.add(
+            Car(
+              id: document.id,
+              userUid: document.data()['user_uid'] as String,
+              car: document.data()['car'] as String,
+              desc: document.data()['desc'] as String,
+              regDate: document.data()['reg_date'].toDate() as DateTime,
+              modDate: document.data()['mod_date'].toDate() as DateTime,
+            ),
+          );
+          notifyListeners();
+        }
+      }
+    });
+
+    _locationSubscription = FirebaseFirestore.instance
+        .collection('location')
+        .orderBy('reg_date')
+        .snapshots()
+        .listen((snapshot) {
+      _location = [];
+      for (final document in snapshot.docs) {
+        _location.add(
+          Location(
             id: document.id,
-            userUid: document.data()['user_uid'] as String,
-            car: document.data()['car'] as String,
-            desc: document.data()['desc'] as String,
+            name: document.data()['name'] as String,
             regDate: document.data()['reg_date'].toDate() as DateTime,
             modDate: document.data()['mod_date'].toDate() as DateTime,
           ),
         );
+        notifyListeners();
       }
     });
-    notifyListeners();
   }
 
-  ListView buildCarpoolListView(BuildContext context, bool myCarpool) {
-    List<Carpool> carpoolList = [];
+  void setSelectedCarpool(Carpool carpool) {
+    _selectedCarpool = carpool;
+  }
 
-    if (myCarpool) {
-      for (Parcitipate participate in _myCarpool) {
-        for (Carpool carpool in _carpool) {
-          if (participate.carpoolUid == carpool.id) {
-            carpoolList.add(carpool);
-          }
-        }
-      }
-    } else {
-      carpoolList = _carpool;
-    }
-
-    return ListView.builder(
-      itemCount: _carpool.length,
-      padding: const EdgeInsets.all(16.0),
-      itemBuilder: (BuildContext context, int index) {
-        return Card(
-          clipBehavior: Clip.antiAlias,
-          child: Consumer<ApplicationState>(
-            builder: (context, appState, _) => ListTile(
-              contentPadding: const EdgeInsets.all(10.0),
-              onTap: () => {
-                _selectedCarpool = carpoolList[index],
-                appState.changePageIndex(6),
-              },
-              title: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(_carpool[index].regular ? '정기 카풀' : '단발성 카풀'),
-                      ),
-                      Text(_carpool[index].fee.toString() + '원 - '),
-                      Text(_carpool[index].currentNum.toString() + ' / ' + _carpool[index].maxNum.toString()),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          children: [
-                            Text(_carpool[index].startLocation),
-                            Text(_carpool[index].startLocationDetail),
-                          ],
-                        )
-                      ),
-                      Text(_carpool[index].fee.toString() + '원'),
-                      Expanded(
-                        child: Column(
-                          children: [
-                            Text(_carpool[index].endLocation),
-                            Text(_carpool[index].endLocationDetail),
-                          ],
-                        )
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(_carpool[index].departureTime.toString()),
-                      ),
-                    ],
-                  ),
-                ]
-              ),
-            ),
-          ),
-        );
-      },
-    );
+  void setSelectedChatRoom(String uid) {
+    _selectedChatRoom = uid;
   }
 
   void applyCarpool(Carpool carpool) {
@@ -250,12 +196,14 @@ class CarpoolState extends ChangeNotifier {
         .collection('carpool')
         .add(<String, dynamic>{
       'user_uid': carpool.userUid,
+      'nickname': carpool.nickname,
       'car_uid': carpool.carUid,
+      'car_num': carpool.carNum,
+      'car_desc': carpool.carDesc,
       'start_location': carpool.startLocation,
       'start_location_detail': carpool.startLocationDetail,
       'end_location': carpool.endLocation,
       'end_location_detail': carpool.endLocationDetail,
-      'downtown': carpool.downtown,
       'max_num': carpool.maxNum,
       'current_num': 0,
       'fee': carpool.fee,
@@ -265,6 +213,8 @@ class CarpoolState extends ChangeNotifier {
       'reg_date': FieldValue.serverTimestamp(),
       'mod_date': FieldValue.serverTimestamp(),
     });
+
+    notifyListeners();
   }
 
   void updateCarpool(Carpool carpool) {
@@ -273,11 +223,12 @@ class CarpoolState extends ChangeNotifier {
         .doc(carpool.id)
         .update({
       'car_uid': carpool.carUid,
+      'car_num': carpool.carNum,
+      'car_desc': carpool.carDesc,
       'start_location': carpool.startLocation,
       'start_location_detail': carpool.startLocationDetail,
       'end_location': carpool.endLocation,
       'end_location_detail': carpool.endLocationDetail,
-      'downtown': carpool.downtown,
       'max_num': carpool.maxNum,
       'fee': carpool.fee,
       'regular': carpool.regular,
@@ -285,65 +236,17 @@ class CarpoolState extends ChangeNotifier {
       'memo': carpool.memo,
       'mod_date': FieldValue.serverTimestamp(),
     });
+
+    notifyListeners();
   }
 
   void deleteCarpool(String carpoolId) {
     FirebaseFirestore.instance
-        .collection('car')
+        .collection('carpool')
         .doc(carpoolId)
         .delete();
-  }
 
-  ListView buildCarListView(BuildContext context) {
-
-    return ListView.builder(
-      itemCount: _car.length,
-      padding: const EdgeInsets.all(16.0),
-      itemBuilder: (BuildContext context, int index) {
-        return Card(
-          clipBehavior: Clip.antiAlias,
-          child: Consumer<ApplicationState>(
-            builder: (context, appState, _) => Consumer<CarpoolState>(
-              builder: (context, carpoolState, _) => ListTile(
-                contentPadding: const EdgeInsets.all(10.0),
-                title: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(_car[index].car),
-                          ),
-                          TextButton(
-                            onPressed: () => {
-                              carpoolState.deleteCar(index),
-                            },
-                            child: const Text("삭제",)
-                          ),
-                          TextButton(
-                              onPressed: () => {
-                                appState.setEditInformation(false, index),
-                                appState.changePageIndex(8),
-                              },
-                              child: const Text("수정")
-                          ),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(_car[index].desc),
-                          ),
-                        ],
-                      ),
-                    ]
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
+    notifyListeners();
   }
 
   void addCar(String number, String desc) {
@@ -356,6 +259,8 @@ class CarpoolState extends ChangeNotifier {
       'reg_date': FieldValue.serverTimestamp(),
       'mod_date': FieldValue.serverTimestamp(),
     });
+
+    notifyListeners();
   }
 
   void updateCar(String number, String desc, int index) {
@@ -367,6 +272,8 @@ class CarpoolState extends ChangeNotifier {
       'desc': desc,
       'mod_date': FieldValue.serverTimestamp(),
     });
+
+    notifyListeners();
   }
 
   void deleteCar(int index) {
@@ -374,6 +281,8 @@ class CarpoolState extends ChangeNotifier {
         .collection('car')
         .doc(_car[index].id)
         .delete();
+
+    notifyListeners();
   }
 
   bool checkParticipate(String carpoolUid) {
@@ -386,24 +295,45 @@ class CarpoolState extends ChangeNotifier {
     return false;
   }
 
-  void addParticipate(String carpoolUid) {
+  void addParticipate(String carpoolUid, int currentNum) {
     FirebaseFirestore.instance
         .collection('participate')
         .add(<String, dynamic>{
       'user_uid': FirebaseAuth.instance.currentUser!.uid,
+      'nickname': FirebaseAuth.instance.currentUser!.displayName,
       'carpool_uid': carpoolUid,
       'send': false,
       'reg_date': FieldValue.serverTimestamp(),
       'mod_date': FieldValue.serverTimestamp(),
     });
+
+    FirebaseFirestore.instance
+        .collection('carpool')
+        .doc(carpoolUid)
+        .update({
+      'current_num': currentNum + 1,
+      'mod_date': FieldValue.serverTimestamp(),
+    });
+
+    sendChat(
+        Chat(
+          id: '',
+          userUid: FirebaseAuth.instance.currentUser!.uid,
+          nickname: FirebaseAuth.instance.currentUser!.displayName.toString(),
+          carpoolUid: carpoolUid,
+          message: FirebaseAuth.instance.currentUser!.displayName.toString() + "님께서 카풀에 참여하셨습니다",
+          regDate: DateTime.now(),
+          modDate: DateTime.now(),
+        )
+    );
+    
+    notifyListeners();
   }
 
-  void deleteParticipate(String carpoolUid) {
+  void deleteParticipate(String carpoolUid, int currentNum) {
     int index = 0;
-    print("zxcvzxcv");
     for (int i = 0; i < _myCarpool.length; i++) {
       if (_myCarpool[i].carpoolUid == carpoolUid) {
-        print(_myCarpool[i].carpoolUid);
         index = i;
         break;
       }
@@ -413,5 +343,41 @@ class CarpoolState extends ChangeNotifier {
         .collection('participate')
         .doc(_myCarpool[index].id)
         .delete();
+
+    FirebaseFirestore.instance
+        .collection('carpool')
+        .doc(carpoolUid)
+        .update({
+      'current_num': currentNum - 1,
+      'mod_date': FieldValue.serverTimestamp(),
+    });
+    
+    sendChat(
+      Chat(
+        id: '',
+        userUid: FirebaseAuth.instance.currentUser!.uid,
+        nickname: FirebaseAuth.instance.currentUser!.displayName.toString(),
+        carpoolUid: carpoolUid,
+        message: FirebaseAuth.instance.currentUser!.displayName.toString() + "님께서 카풀 참여를 취소하셨습니다",
+        regDate: DateTime.now(),
+        modDate: DateTime.now(),
+      )
+    );
+
+    notifyListeners();
+  }
+
+  void sendChat(Chat chat) {
+    FirebaseFirestore.instance
+        .collection('chat')
+        .add(<String, dynamic>{
+      'user_uid': chat.userUid,
+      'nickname': chat.nickname,
+      'carpool_uid': chat.carpoolUid,
+      'message': chat.message,
+      'reg_date': FieldValue.serverTimestamp(),
+      'mod_date': FieldValue.serverTimestamp(),
+    });
+    notifyListeners();
   }
 }

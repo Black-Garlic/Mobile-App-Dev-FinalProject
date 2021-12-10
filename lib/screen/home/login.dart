@@ -18,6 +18,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import 'package:flutter/material.dart';
+import 'package:mobile_app_final_project/state/application_state.dart';
 import 'package:mobile_app_final_project/state/firebase_state.dart';
 import 'package:provider/provider.dart';
 
@@ -39,31 +40,31 @@ class _LoginPageState extends State<LoginPage> {
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
           children: <Widget>[
-            const SizedBox(height: 80.0),
+            const SizedBox(height: 150.0),
             Column(
               children: <Widget>[
                 Image.asset(
                   'assets/garlic_icon.png',
-                  width: 100,
-                  height: 100,
+                  width: 150,
+                  height: 150,
                   fit: BoxFit.cover,
                 ),
                 const SizedBox(height: 16.0),
               ],
             ),
-            const SizedBox(height: 120.0),
+            const SizedBox(height: 150.0),
             Consumer<FirebaseState>(
-              builder: (context, appState, _) => ElevatedButton(
-                child: const Text('Google'),
-                onPressed: () async {
-                  if (await appState.signInWithGoogle(context)) {
-                    Navigator.pushNamed(context, '/sign_up');
-                  } else {
+              builder: (context, firebaseState, _) => Consumer<ApplicationState>(
+                builder: (context, appState, _) => ElevatedButton(
+                  child: const Text('Google'),
+                  onPressed: () async {
+                    firebaseState.signInWithGoogle(context);
+                    appState.changePageIndex(4);
                     Navigator.pop(context);
-                  }
-                },
-                style: ButtonStyle(
-                  backgroundColor: MaterialStateProperty.all<Color>(Colors.black),
+                  },
+                  style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.all<Color>(Colors.black),
+                  ),
                 ),
               ),
             ),

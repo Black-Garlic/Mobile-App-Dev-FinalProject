@@ -20,7 +20,7 @@ class CarpoolApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Shrine',
+      title: 'Carpool',
       home: const BottomTab(),
       initialRoute: '/login',
       routes: {

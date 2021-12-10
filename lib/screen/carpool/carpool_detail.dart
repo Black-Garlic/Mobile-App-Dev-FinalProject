@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../state/carpool_state.dart';
 import '../../state/application_state.dart';
@@ -9,8 +10,29 @@ class CarpoolDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Consumer<CarpoolState>(
+    TextStyle titleStyle = const TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.bold
+    );
+
+    TextStyle contentStyle = const TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.w400
+    );
+
+    ButtonStyle buttonStyle = ElevatedButton.styleFrom(
+      shape: RoundedRectangleBorder(	//모서리를 둥글게
+        borderRadius: BorderRadius.circular(10),
+        side: const BorderSide(color: Colors.black, width: 1)
+      ),
+      primary: Colors.black,
+      textStyle: const TextStyle(fontSize: 20, color:Colors.black)
+    );
+
+    double sizedBoxHeight = 25;
+
+    return Consumer<ApplicationState>(
+      builder: (context, appState, _) => Consumer<CarpoolState>(
         builder: (context, carpoolState, _) => Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -18,74 +40,95 @@ class CarpoolDetailPage extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: carpoolState.selectedCarpool.regular ?
-                  const Text("단발성 카풀")
-                  :
-                  const Text("정기 카풀"),
+                  child: Column(
+                    children: [
+                      Text(carpoolState.selectedCarpool.startLocation, style: titleStyle,),
+                      Text(carpoolState.selectedCarpool.startLocationDetail, style: titleStyle,),
+                    ],
+                  ),
                 ),
-                Text(carpoolState.selectedCarpool.currentNum.toString() + "명 / " + carpoolState.selectedCarpool.maxNum.toString() + "명"),
+                const Icon(Icons.arrow_forward_rounded),
+                Expanded(
+                  child: Column(
+                    children: [
+                      Text(carpoolState.selectedCarpool.endLocation, style: titleStyle,),
+                      Text(carpoolState.selectedCarpool.endLocationDetail, style: titleStyle,),
+                    ],
+                  ),
+                ),
               ],
             ),
+            SizedBox(height: sizedBoxHeight),
             Row(
               children: [
-                const Expanded(child: Text("출발지")),
-                IconButton(
-                  onPressed: () => print("Start location map"),
-                  icon: const Icon(Icons.map_outlined),
-                )
+                Expanded(child: Text("탑승 인원", style: titleStyle)),
+                Text(carpoolState.selectedCarpool.currentNum.toString() + "명 / " + carpoolState.selectedCarpool.maxNum.toString() + "명", style: contentStyle,),
               ],
             ),
-            Text(carpoolState.selectedCarpool.startLocation),
-            Text(carpoolState.selectedCarpool.startLocationDetail),
+            SizedBox(height: sizedBoxHeight),
             Row(
               children: [
-                const Expanded(child: Text("출발지")),
-                IconButton(
-                  onPressed: () => print("Start location map"),
-                  icon: const Icon(Icons.map_outlined),
-                )
+                Expanded(child: Text("출발 시간", style: titleStyle)),
+                Text(DateFormat("yyyy-MM-dd HH:mm").format(carpoolState.selectedCarpool.departureTime), style: contentStyle,),
               ],
             ),
-            Text(carpoolState.selectedCarpool.endLocation),
-            Text(carpoolState.selectedCarpool.endLocationDetail),
-            const Text("출발 시간"),
-            Text(carpoolState.selectedCarpool.departureTime.toString()),
+            SizedBox(height: sizedBoxHeight),
             Row(
               children: [
-                const Expanded(child: Text("요금")),
-                Text(carpoolState.selectedCarpool.fee.toString()),
+                Expanded(child: Text("요금", style: titleStyle)),
+                Text(carpoolState.selectedCarpool.fee.toString() + "원", style: contentStyle,),
               ],
             ),
+            SizedBox(height: sizedBoxHeight),
             Row(
               children: [
-                const Expanded(child: Text("운전자")),
-                Text(carpoolState.selectedCarpool.userUid),
+                Expanded(child: Text("운전자", style: titleStyle)),
+                Text(carpoolState.selectedCarpool.nickname, style: contentStyle,),
               ],
             ),
+            SizedBox(height: sizedBoxHeight),
             Row(
               children: [
-                const Expanded(child: Text("차량정보")),
-                Text(carpoolState.selectedCarpool.carUid),
+                Expanded(child: Text("차량 번호", style: titleStyle)),
+                Text(carpoolState.selectedCarpool.carNum, style: contentStyle,),
               ],
             ),
-            Text(carpoolState.selectedCarpool.carUid),
-            const Text("메모"),
-            Text(carpoolState.selectedCarpool.memo),
+            SizedBox(height: sizedBoxHeight),
+            Row(
+              children: [
+                Expanded(child: Text("차량 정보", style: titleStyle)),
+                Text(carpoolState.selectedCarpool.carDesc, style: contentStyle,),
+              ],
+            ),
+            SizedBox(height: sizedBoxHeight),
+            Row(
+              children: [
+                Expanded(child: Text("메모", style: titleStyle)),
+                Text(carpoolState.selectedCarpool.memo, style: contentStyle,),
+              ],
+            ),
+            SizedBox(height: sizedBoxHeight),
             carpoolState.selectedCarpool.userUid == FirebaseAuth.instance.currentUser!.uid ?
             Row(
               children: [
                 Expanded(
                   child: ElevatedButton(
-                      onPressed: () => carpoolState.deleteCarpool(carpoolState.selectedCarpool.id),
-                      child: const Text("삭제")
+                    style: buttonStyle,
+                    onPressed: () => {
+                      carpoolState.deleteCarpool(carpoolState.selectedCarpool.id),
+                      appState.changePageIndex(4),
+                    },
+                    child: const Text("삭제")
                   ),
                 ),
-                const SizedBox(width: 30,),
+                const SizedBox(width: 20,),
                 Consumer<ApplicationState>(
                   builder: (context, appState, _) => Expanded(
                     child: ElevatedButton(
+                      style: buttonStyle,
                       onPressed: () => {
                         appState.setEditInformation(true, 0),
+                        appState.setTabTitle("카풀 수정", 5),
                         appState.changePageIndex(5),
                       },
                       child: const Text("수정")
@@ -94,20 +137,28 @@ class CarpoolDetailPage extends StatelessWidget {
                 ),
               ],
             )
-            :
+                :
             Row(
               children: [
-                carpoolState.checkParticipate(carpoolState.selectedCarpool.id) ?
+                !carpoolState.checkParticipate(carpoolState.selectedCarpool.id) ?
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () => carpoolState.addParticipate(carpoolState.selectedCarpool.id),
-                    child: const Text("신청")
+                    style: buttonStyle,
+                    onPressed: () => {
+                      carpoolState.addParticipate(carpoolState.selectedCarpool.id, carpoolState.selectedCarpool.currentNum),
+                      appState.changePageIndex(4),
+                    },
+                    child: const Text("참여"),
                   ),
                 )
-                :
+                    :
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () => carpoolState.deleteParticipate(carpoolState.selectedCarpool.id),
+                    style: buttonStyle,
+                    onPressed: () => {
+                      carpoolState.deleteParticipate(carpoolState.selectedCarpool.id, carpoolState.selectedCarpool.currentNum),
+                      appState.changePageIndex(4),
+                    },
                     child: const Text("취소")
                   ),
                 ),
@@ -116,53 +167,6 @@ class CarpoolDetailPage extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key? key, required this.title}) : super(key: key);
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headline4,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }

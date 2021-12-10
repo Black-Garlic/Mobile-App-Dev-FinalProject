@@ -10,11 +10,11 @@ import '../screen/my_page/profile.dart';
 import '../screen/my_page/car_add.dart';
 
 class ApplicationState extends ChangeNotifier {
-  int _pageIndex = 0;
+  int _pageIndex = 4;
   int get pageIndex => _pageIndex;
 
   final List<Widget> _page = [
-    const HomePage(),
+    const CarpoolListPage(),
     const NotificationPage(),
     const ChatListPage(),
     const ChatRoomPage(),
@@ -36,6 +36,12 @@ class ApplicationState extends ChangeNotifier {
     '프로필',
     '차량 등록',
   ];
+
+  bool _backButton = false;
+  bool get backButton => _backButton;
+
+  int _backButtonIndex = 0;
+  int get backButtonIndex => _backButtonIndex;
 
   bool _editPage = false;
   bool get editPage => _editPage;
@@ -60,6 +66,10 @@ class ApplicationState extends ChangeNotifier {
     _title[3] = carpool;
   }
 
+  void setTabTitle(String title, int index) {
+    _title[index] = title;
+  }
+
   void onTapBottomNavigation(int index) {
     switch(index) {
       case 0:
@@ -68,6 +78,7 @@ class ApplicationState extends ChangeNotifier {
         break;
       case 1:
         resetEditInformation();
+        setTabTitle("카풀 등록", 5);
         changePageIndex(5);
         break;
       case 2:
@@ -79,6 +90,18 @@ class ApplicationState extends ChangeNotifier {
 
   void changePageIndex(int index) {
     _pageIndex = index;
+    if (index == 3) {
+      _backButton = true;
+      _backButtonIndex = 2;
+    } else if (index == 6) {
+      _backButton = true;
+      _backButtonIndex = 4;
+    } else if (index == 8) {
+      _backButton = true;
+      _backButtonIndex = 7;
+    } else {
+      _backButton = false;
+    }
     notifyListeners();
   }
 

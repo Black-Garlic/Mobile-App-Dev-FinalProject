@@ -11,7 +11,7 @@ void main() {
       MultiProvider(
           providers: [
             ChangeNotifierProvider<ApplicationState>(create: (context) => ApplicationState()),
-            ChangeNotifierProvider<FirebaseState>(create: (context) => FirebaseState(context)),
+            ChangeNotifierProvider<FirebaseState>(create: (context) => FirebaseState()),
             ChangeNotifierProvider<CarpoolState>(create: (context) => CarpoolState()),
           ],
           child: const CarpoolApp()

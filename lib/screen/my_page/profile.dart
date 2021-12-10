@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_app_final_project/model/carpool.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../state/carpool_state.dart';
@@ -10,29 +11,49 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    TextStyle titleStyle = const TextStyle(
+        fontSize: 24,
+        fontWeight: FontWeight.bold
+    );
+
+    TextStyle contentStyle = const TextStyle(
+        fontSize: 24,
+        fontWeight: FontWeight.w600
+    );
+
+    ButtonStyle buttonStyle = ElevatedButton.styleFrom(
+      shape: RoundedRectangleBorder(	//모서리를 둥글게
+          borderRadius: BorderRadius.circular(10),
+          side: const BorderSide(color: Colors.black, width: 1)
+      ),
+      primary: Colors.black,
+      textStyle: const TextStyle(fontSize: 20, color:Colors.black),
+      minimumSize: const Size(150, 40),
+    );
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
-          const SizedBox(
-            height: 50,
-            child: Text("기본 정보"),
+          SizedBox(
+            height: 40,
+            child: Text("기본 정보", style: titleStyle),
           ),
           Consumer<FirebaseState>(
             builder: (context, firebaseState, _) => SizedBox(
-              height: 50,
+              height: 90,
               child: Column(
                 children: [
                   Row(
                     children: [
-                      const Expanded(child: Text("이름")),
-                      Text(FirebaseAuth.instance.currentUser!.displayName.toString()),
+                      Expanded(child: Text("이메일", style: titleStyle)),
+                      Text(FirebaseAuth.instance.currentUser!.email.toString(), style: contentStyle,),
                     ],
                   ),
                   Row(
                     children: [
-                      const Expanded(child: Text("닉네임")),
-                      Text(FirebaseAuth.instance.currentUser!.displayName.toString()),
+                      Expanded(child: Text("닉네임", style: titleStyle)),
+                      Text(FirebaseAuth.instance.currentUser!.displayName.toString(), style: contentStyle,),
                     ],
                   ),
                 ],
@@ -43,11 +64,13 @@ class ProfilePage extends StatelessWidget {
             height: 50,
             child: Row(
               children: [
-                const Expanded(child: Text("차량 정보")),
+                Expanded(child: Text("차량 정보", style: titleStyle)),
                 Consumer<ApplicationState>(
-                  builder: (context, appState, _) => TextButton(
+                  builder: (context, appState, _) => ElevatedButton(
+                    style: buttonStyle,
                     onPressed: () => {
                       appState.resetEditInformation(),
+                      appState.setTabTitle("차량 등록", 8),
                       appState.changePageIndex(8),
                     },
                     child: const Text("차량 등록"),
@@ -56,16 +79,24 @@ class ProfilePage extends StatelessWidget {
               ],
             )
           ),
-          Expanded(
-            child: Consumer<CarpoolState>(
-                builder: (context, carpoolState, _) => carpoolState.buildCarListView(context)
-            ),
+          const Expanded(
+            child: CarListView(),
           ),
           Consumer<FirebaseState>(
-            builder: (context, firebaseState, _) => TextButton(
-              onPressed: () => firebaseState.signOut(),
-              child: const Text("로그아웃"),
-            ),
+            builder: (context, firebaseState, _) => Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    style: buttonStyle,
+                    onPressed: () => {
+                      Navigator.pushNamed(context, '/login'),
+                      firebaseState.signOut()
+                    },
+                    child: const Text("로그아웃"),
+                  ),
+                ),
+              ],
+            )
           ),
         ],
       ),
@@ -73,49 +104,93 @@ class ProfilePage extends StatelessWidget {
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key? key, required this.title}) : super(key: key);
-
-  final String title;
+class CarListView extends StatefulWidget {
+  const CarListView({Key? key, }) : super(key: key);
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<CarListView> createState() => _CarListViewState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _CarListViewState extends State<CarListView> {
 
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
+  TextStyle titleStyle = const TextStyle(
+      fontSize: 20,
+      fontWeight: FontWeight.bold
+  );
+
+  TextStyle contentStyle = const TextStyle(
+      fontSize: 16,
+      fontWeight: FontWeight.w600
+  );
+
+  ButtonStyle buttonStyle = ElevatedButton.styleFrom(
+    shape: RoundedRectangleBorder(	//모서리를 둥글게
+        borderRadius: BorderRadius.circular(10),
+        side: const BorderSide(color: Colors.black, width: 1)
+    ),
+    primary: Colors.black,
+    textStyle: const TextStyle(fontSize: 16, color:Colors.black),
+    minimumSize: const Size(0, 35),
+  );
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headline4,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+    return Consumer<ApplicationState>(
+      builder: (context, appState, _) => Consumer<CarpoolState>(
+        builder: (context, carpoolState, _) => ListView.builder(
+          itemCount: carpoolState.car.length,
+          padding: const EdgeInsets.all(16.0),
+          itemBuilder: (BuildContext context, int index) {
+            return Card(
+              clipBehavior: Clip.antiAlias,
+              elevation: 3,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+                side: const BorderSide(color: Colors.black, width: 1)
+              ),
+              child: ListTile(
+                contentPadding: const EdgeInsets.all(10.0),
+                title: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(carpoolState.car[index].car, style: titleStyle,),
+                        ),
+                        ElevatedButton(
+                          style: buttonStyle,
+                          onPressed: () => {
+                            carpoolState.deleteCar(index),
+                          },
+                          child: const Text("삭제",)
+                        ),
+                        const SizedBox(width: 10),
+                        ElevatedButton(
+                          style: buttonStyle,
+                          onPressed: () => {
+                            appState.setEditInformation(false, index),
+                            appState.setTabTitle("차량 수정", 8),
+                            appState.changePageIndex(8),
+                          },
+                          child: const Text("수정")
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(carpoolState.car[index].desc, style: contentStyle),
+                        ),
+                      ],
+                    ),
+                  ]
+                ),
+              ),
+            );
+          },
+        )
+      )
     );
   }
 }

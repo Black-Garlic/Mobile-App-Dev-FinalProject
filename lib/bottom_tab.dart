@@ -26,15 +26,15 @@ class _BottomTabState extends State<BottomTab> {
       builder: (context, appState, _) => Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
+          leading: appState.backButton ?
+            IconButton(
+              onPressed: () => appState.changePageIndex(appState.backButtonIndex),
+              icon: const Icon(Icons.arrow_back_ios),
+            )
+            :
+            Text(""),
           title: Text(appState.getTitle()),
           actions: [
-            IconButton(
-              icon: const Icon(
-                Icons.notifications,
-                semanticLabel: 'filter',
-              ),
-              onPressed: () => appState.changePageIndex(1),
-            ),
             IconButton(
               icon: const Icon(
                 Icons.mail_outline,
@@ -44,6 +44,7 @@ class _BottomTabState extends State<BottomTab> {
             ),
           ],
           backgroundColor: Colors.black,
+          centerTitle: true,
         ),
         body: Padding(
           padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
